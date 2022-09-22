@@ -2,9 +2,11 @@
 tg机器人的所有命令行为（除了start）
 查 需要改
 """
+import os
 import datetime
 import platform
 import re
+from time import time,localtime,strftime
 
 from telegram import Update
 from telegram.ext import CallbackContext, ContextTypes
@@ -103,6 +105,13 @@ def clear(update: Update, context: CallbackContext):
     target_file = update.effective_chat.id
     query = update.callback_query
     query.answer()
+    t = localtime(time())
+    day = strftime('%m-%d-%H-%M-%S', t)
+    # filename = str(target_file) + '_backup' + '.txt'  # 以后可以选择只备份一次
+    path = os.getcwd()
+    filename = './backup/' + str(target_file) + f'_backup_{day}' + '.txt'
+    backup_path = os.path.join(path, filename)
+
     if query.data == 'clearall':
         with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
             mysave = f.read()
@@ -112,7 +121,7 @@ def clear(update: Update, context: CallbackContext):
             f.truncate(0)
         with open(str(target_file) + '_url' + '.txt', 'a+', encoding='utf-8') as f:
             f.truncate(0)
-        with open(str(target_file) + '_backup' + '.txt', 'w', encoding='utf-8') as f:
+        with open(backup_path, 'w', encoding='utf-8') as f:
             f.write(mysave + mysave_url)
         query.edit_message_text(text=f"Selected option: {query.data}, clear done.")
     elif query.data == 'notclear':
@@ -125,6 +134,7 @@ def clear(update: Update, context: CallbackContext):
 # 顺便统计消息数量
 def earliest_msg(update: Update, context: CallbackContext):
     n = 2
+    n_url = 0
     target_file = update.effective_chat.id
     first_message = ""
     with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
@@ -146,7 +156,14 @@ def earliest_msg(update: Update, context: CallbackContext):
         # 文件指针回到开头读首条数据时间
         f.seek(0)
         first_date = f.read(46)[27:]
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f'The number of messages you have saved is {n},\nHere is the earliest message you saved at ' + first_date)
+    with open(str(target_file) + '_url.txt', 'r', encoding='utf-8') as f:
+        if not f.readline():
+            context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message.")
+            return 0
+        # 统计网址数量，会自动跳过空行
+        for line in f:
+            n_url += 1
+    context.bot.send_message(chat_id=update.effective_chat.id, text=f'The number of messages you have saved is {n}, and {n_url} urls.\nHere is the earliest message you saved at ' + first_date)
     context.bot.send_message(chat_id=update.effective_chat.id, text=first_message)
 
 
