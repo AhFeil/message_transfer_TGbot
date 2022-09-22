@@ -22,5 +22,19 @@ tg上有大量优秀频道每日更新，收藏这些消息一般是通过收藏
 ## 代办
 - 改善tgbot代码：同类精简，类化
 - tgbot运行代码和配置信息分离
-- 无限backup时间戳
-- 添加定时重复处理提醒，还有100条提醒
+- 添加定时重复处理提醒，需要与todo结合后再添加。还有100条提醒，
+- 如果转存内容只有一个网址，且在自定义的网址集合中，那么只保存这个网址，忽略其他内容（比如GitHub本身就有详细介绍）
+
+## 自部署流程
+依然不方便，仅是添加一个板块
+
+拉取
+```sh
+git clone https://github.com/AhFeil/message_transfer_TGbot.git
+```
+
+安装环境和依赖
+```sh
+sudo apt install python3 python3 python3-pip
+pip install -r requirements.txt
+```
