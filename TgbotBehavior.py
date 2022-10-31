@@ -14,7 +14,8 @@ from telegram import InlineQueryResultArticle, InputTextMessageContent
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-# def extract_urls(update):  # 该怎么传入 update
+def extract_urls(update):  # 该怎么传入 update
+    pass
 
 
 # 转存
@@ -60,11 +61,16 @@ def transfer(update: Update, context: CallbackContext):
 def save_as_note(update: Update, context: CallbackContext):
     # 存有信息的文件
     target_file = update.effective_chat.id
-    # 根据系统特征选择 要保存的文件
-    if  platform.platform()== 'Windows-':
-        save_file = '.md'
-    elif platform.platform()== 'Linux-':
-        save_file = '/var/www/webnote/'
+    # 选择的网址地址
+    netstr = 'iVEAx10O7Xk1Wf'
+    # 长度限制3个到15个，字符限制仅字母和数字
+    if not (netstr.isalnum() and 2<len(netstr)<16):
+        netstr = 'wrong_format'
+    # 根据系统特征选择 要保存的位置，根据不同用户添加不同网址
+    if  platform.platform()== 'Windows-10-10.0.19044-SP0':
+        save_file = 'ahfei.md'
+    elif platform.platform()== 'Linux-5.4.0-124-generic-x86_64-with-glibc2.31':
+        save_file = '/var/www/webnote/_tmp/' + netstr
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="where am I?")
     # 读取然后保存
@@ -75,6 +81,9 @@ def save_as_note(update: Update, context: CallbackContext):
     with open(save_file, 'a', encoding='utf-8') as f:
         f.write(mysave + mysave_url)
 
+    # 根据用户选定的网址 给出网址链接
+    context.bot.send_message(chat_id=update.effective_chat.id, text="save done.please visit http://note.ahfei.icu/" + netstr)
+
     # 制作对话内的键盘，第一个是专门的结构，第二个函数是将这个结构转成
     inline_kb = [
         [
@@ -84,7 +93,7 @@ def save_as_note(update: Update, context: CallbackContext):
     ]
     kb_markup = InlineKeyboardMarkup(inline_kb)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text="save done.", reply_markup=kb_markup)
+    context.bot.send_message(chat_id=update.effective_chat.id, text="and then ..." , reply_markup=kb_markup)
 
 
 # 确认删除转存内容
@@ -111,6 +120,7 @@ def clear(update: Update, context: CallbackContext):
     path = os.getcwd()
     filename = './backup/' + str(target_file) + f'_backup_{day}' + '.txt'
     backup_path = os.path.join(path, filename)
+    # print(backup_path)  # 虽然D:\Data\Codes\SelfProject\TGBot\./backup/2082052804_backup_09-23-00-16-39.txt，但可以用
 
     if query.data == 'clearall':
         with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
@@ -131,7 +141,7 @@ def clear(update: Update, context: CallbackContext):
 
 
 # 显示最早的一条信息。标准操作，只有两种情况，全空，或者开头是 '-' * 27 ，下面也只考虑这两种情况
-# 顺便统计消息数量
+# 顺便统计消息数量和网址数量
 def earliest_msg(update: Update, context: CallbackContext):
     n = 2
     n_url = 0
@@ -156,6 +166,7 @@ def earliest_msg(update: Update, context: CallbackContext):
         # 文件指针回到开头读首条数据时间
         f.seek(0)
         first_date = f.read(46)[27:]
+
     with open(str(target_file) + '_url.txt', 'r', encoding='utf-8') as f:
         if not f.readline():
             context.bot.send_message(chat_id=update.effective_chat.id, text="You don't have any message.")
@@ -163,8 +174,46 @@ def earliest_msg(update: Update, context: CallbackContext):
         # 统计网址数量，会自动跳过空行
         for line in f:
             n_url += 1
+
     context.bot.send_message(chat_id=update.effective_chat.id, text=f'The number of messages you have saved is {n}, and {n_url} urls.\nHere is the earliest message you saved at ' + first_date)
     context.bot.send_message(chat_id=update.effective_chat.id, text=first_message)
+
+
+# 删除最新添加的一条会返回文本，可以实现外显链接，
+def delete_last_msg(update: Update, context: CallbackContext):
+    target_file = update.effective_chat.id
+    last_message = ""
+
+    with open(str(target_file) + '.txt', 'r', encoding='utf-8') as f:
+        # 先全部读取，从倒数第二行开始判断
+        str_list = f.readlines()
+        i = -2
+        while True:
+            if str_list[i][0:27] == '-' * 27:
+                break
+            else:
+                i -= 1
+        # 此时拿到了 最新一条消息是开头所在行，倒数的
+        # 然后切片保存到 last_lines
+        last_lines = str_list[i:-1]
+        # 要发送的消息
+        last_message = ''.join(last_lines)
+        # print(last_message)
+
+    with open(str(target_file) + '.txt', 'a+', encoding='utf-8') as f:
+        # 删除
+        last_length = 0
+        # 获得要开始删除的位置，以字节计，总文件字节 - 要删除的字节 - 行（行尾的神秘符号？）
+        for i in last_lines:
+            last_length += len(i.encode())
+        size = os.path.getsize(f'./{update.effective_chat.id}.txt') - last_length - len(last_lines)
+        size = 0 if size < 0 else size
+        print(size)
+        f.truncate(size)
+
+    # 发送到tg
+    context.bot.send_message(chat_id=update.effective_chat.id, text=f'Here is the last message you saved')
+    context.bot.send_message(chat_id=update.effective_chat.id, text=last_message)
 
 
 # inline
