@@ -35,8 +35,8 @@ elif system == 'Linux-5.4.0-124-generic-x86_64-with-glibc2.31':
 else:
     print("where am I?")
 
-chat_id = '2082052804'
-bot_token = '5344378819:AAGG3r70tFwfiaUr1884TIzc8y5z2pY9xmY'
+chat_id = ''
+bot_token = ''
 manage_id = [chat_id, '1111111111']
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
